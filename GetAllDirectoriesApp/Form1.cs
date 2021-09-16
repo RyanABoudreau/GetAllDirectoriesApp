@@ -17,7 +17,8 @@ namespace GetAllDirectoriesApp
 
         string folderPath = "notYetDefined";
         List<Folder> folderList = new List<Folder>();
-
+        long tempSize = 0;
+        
         public void button1_Click(object sender, EventArgs e)
         {
             GetRootFolder();
@@ -29,15 +30,21 @@ namespace GetAllDirectoriesApp
         }
         public void ConvertSubdirectoriesListToTxtFile()
         {
-            folderList = folderList.OrderByDescending(x => x.size).ToList();
-            string rootFolderNameAndDate = GetName(textBox1.Text) + DateTime.Now.ToString("yyyyMMddHHmmssfff");
-            string filePath = folderPath + "\\" + GetName(textBox1.Text) + DateTime.Now.ToString("yyyyMMddHHmmssfff") + "SizeLog.txt";
+            string header = ("Root Directory:" + folderPath + "\nDate/Time document was created:" + DateTime.Now + "\nSize Threshold:>=" + numericUpDown1.Value +"MB\n\nDirectory Size \t \t \t \t  Directory Path \n");
+            folderList = folderList.OrderByDescending(x => x.size).ToList();            
+            string filePath = folderPath + "\\" + "FolderBeholder_SizeLog_" + DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".txt";
             string content = folderList.ToString();
             using (StreamWriter outputFile = new StreamWriter(filePath))
+            {
+
+                outputFile.Write(header);
+                        
                 foreach (var Folder in folderList)
-                {
+                {                    
                     outputFile.WriteLine(string.Format("Size:{0} MB,  Path: {2}", ((Folder.size).ToString()).PadLeft(7), Folder.name, Folder.path));
                 }
+
+            }
             if (File.Exists(filePath))
             {
                 Process.Start("explorer.exe", filePath);
@@ -50,7 +57,11 @@ namespace GetAllDirectoriesApp
             {
                 textBox1.Text = fbd.SelectedPath;
                 folderPath = textBox1.Text;
+                tempSize = GetDirectorySize(folderPath);
+                if (tempSize >= numericUpDown1.Value)
+                {
                 folderList.Add(new Folder(GetName(textBox1.Text), textBox1.Text, GetDirectorySize(textBox1.Text)));
+                }
             }
         }
         public void GetSubdirectoriesList(string folderPath)
@@ -64,13 +75,13 @@ namespace GetAllDirectoriesApp
                         int directoryCount = Directory.GetDirectories(d, "*.*", SearchOption.AllDirectories).Length;
                         if (directoryCount < 1)
                         {
-                            if (checkBox1.Checked == true)
-                            {                               
-                                folderList.Add(new Folder(GetName(d), (d), GetDirectorySize(d)));
-                                folderList.RemoveAll(Folder => Folder.size < 1);
+                            tempSize = GetDirectorySize(d);
+                            if (tempSize >= numericUpDown1.Value)
+                            {
+                                folderList.Add(new Folder(GetName(d), (d), tempSize));
 
                             }
-                            else folderList.Add(new Folder(GetName(d), (d), GetDirectorySize(d)));
+                                
                         }
                         else
                         {
